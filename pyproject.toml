@@ -1,21 +1,38 @@
-[tool.poetry]
-name = "pyproject-toml"
-version = "2.1.4"
-description = "."
-authors = [
-    {name = "Your Name", email = "you@example.com"}
-]
-license = {text = "."}
+[project]
+name = "fastapi-gemini-api"
+version = "0.1.0"
+description = "API FastAPI integrada ao Google Gemini via Google AI SDK"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.10,<3.14"
 
-[tool.poetry.packages]
-include = "pyproject"
+# authors como ARRAY DE OBJETOS (esta forma evita o erro que você recebeu)
+authors = [
+  { name = "Mateus Venancio Deus", email = "162513571+MateusVenancioDeus@users.noreply.github.com" }
+]
 
-[tool.poetry.group.dev.dependencies]
-poetry = "init"
+# dependências principais (formato aceito pelo PEP-621 / Poetry moderno)
+dependencies = [
+  "fastapi>=0.115.0,<0.116.0",
+  "uvicorn>=0.30.0,<0.31.0",
+  "google-generativeai>=0.8.3,<0.9.0",
+  "python-dotenv>=1.0.1,<2.0.0",
+  "pydantic>=2.9.2,<3.0.0",
+]
+
+[project.optional-dependencies]
+# dependências opcionais agrupadas (ex.: banco de dados)
+db = [
+  "psycopg2-binary>=2.9.9,<3.0.0",   # PostgreSQL
+  "motor>=3.6.0,<4.0.0",             # MongoDB
+]
+
+# grupo "dev" (ferramentas de desenvolvimento/testes)
+dev = [
+  "pytest>=8.3.3,<9.0.0",
+  "httpx>=0.27.2,<1.0.0",
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
