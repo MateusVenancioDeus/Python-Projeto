@@ -23,12 +23,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-
 # Modelos de dados para request e response
 class PromptRequest(BaseModel):
     """Modelo de entrada do usuário para o prompt enviado ao Gemini."""
     prompt: str = Field(..., example="Explique o que é FastAPI em uma frase.")
-
 
 class GeminiResponse(BaseModel):
     """Modelo de resposta retornado pela API Gemini."""
@@ -36,119 +34,159 @@ class GeminiResponse(BaseModel):
     output: str
     model: str
 
-
 # Frontend simples
 @app.get("/", response_class=HTMLResponse)
 async def home() -> str:
     """
-    Rota inicial que retorna a interface HTML simples de chat com Gemini.
+    Html basico que retorna com o gemini ia.
     """
     return """
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <h1>Bem vindo ao Seu chat gratuito!<h1>
-        <title>Chat com IA do google</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background: #0D0D0D;
-                margin: 0; padding: 0;
-                display: flex; flex-direction: column; align-items: center;
-                height: 100vh;
-                justify-content: center;
-            }
-            h1 {
-                color: #FFFFFF;
-            }
-            #chatbox {
-                width: 90%;
-                max-width: 600px;
-                background: white;
-                border-radius: 8px;
-                padding: 20px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            }
-            textarea {
-                width: 100%;
-                height: 100px;
-                border-radius: 4px;
-                border: 1px solid #ccc;
-                padding: 10px;
-                font-size: 16px;
-                resize: vertical;
-            }
-            button {
-                margin-top: 10px;
-                padding: 10px 20px;
-                font-size: 16px;
-                background-color: #007bff;
-                border: none;
-                color: white;
-                border-radius: 4px;
-                cursor: pointer;
-            }
-            button:disabled {
-                background-color: #9e9e9e;
-                cursor: not-allowed;
-            }
-            #response {
-                margin-top: 20px;
-                white-space: pre-wrap;
-                background: #e9ecef;
-                padding: 15px;
-                border-radius: 4px;
-                min-height: 80px;
-                font-size: 16px;
-            }
-        </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat IA</title>
+    <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      margin: 0; 
+      padding: 0;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+      height: 100vh;
+      justify-content: center;
+    }
+
+    h1 {
+      color: #FFFFFF;
+      text-align: center;
+    }
+
+    #chatbox {
+      width: 90%;
+      max-width: 600px;
+      background: #121212;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    textarea, #response {
+      width: 100%;
+      height: 150px;   /* altura fixa */
+      border-radius: 6px;
+      border: 3px solid #ccc; /* borda mais grossa */
+      padding: 10px;
+      font-size: 16px;
+      resize: none;    
+      box-sizing: border-box;
+    }
+
+    textarea {
+      background: #fff;
+      color: #000;
+    }
+
+    #response {
+      background: #e9ecef;
+      color: #000;
+      overflow-y: auto;
+      margin-top: 20px; /* deixa mais afastado do botão */
+      border: 3px solid transparent; /* borda invisível por padrão */
+      transition: border 0.3s ease-in-out;
+    }
+
+    /* amarelo enquanto responde */
+    #response.responding {
+      border: 3px solid yellow;
+    }
+
+    /* verde quando terminou */
+    #response.completed {
+      border: 3px solid limegreen;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #9e9e9e;
+      cursor: not-allowed;
+    }
+    </style>
     </head>
     <body>
-        <h1>Chat com Google Gemini</h1>
-        <div id="chatbox">
-            <textarea id="prompt" placeholder="Digite sua pergunta aqui..."></textarea>
-            <button id="sendBtn">Enviar</button>
-            <div id="response"></div>
-        </div>
-        <script>
-            const sendBtn = document.getElementById('sendBtn');
-            const promptInput = document.getElementById('prompt');
-            const responseDiv = document.getElementById('response');
+    <h1>Chat com Google Gemini</h1>
+    <div id="chatbox">
+    <textarea id="prompt" placeholder="Digite sua pergunta aqui..."></textarea>
+    <button id="sendBtn">Enviar</button>
+    <div id="response"></div>
+    </div>
 
-            sendBtn.addEventListener('click', async () => {
-                const promptText = promptInput.value.trim();
-                if (!promptText) {
-                    alert('Digite algo no prompt!');
-                    return;
-                }
-                sendBtn.disabled = true;
-                responseDiv.textContent = 'Carregando...';
+    <script>
+    const sendBtn = document.getElementById('sendBtn');
+    const promptInput = document.getElementById('prompt');
+    const responseDiv = document.getElementById('response');
 
-                try {
-                    const res = await fetch('/ask', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ prompt: promptText })
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.detail || 'Erro na requisição: ' + res.status);
-                    }
-                    const data = await res.json();
-                    responseDiv.textContent = data.output;
-                } catch (error) {
-                    responseDiv.textContent = 'Erro: ' + error.message;
-                } finally {
-                    sendBtn.disabled = false;
-                }
-            });
-        </script>
+    sendBtn.addEventListener('click', async () => {
+      const promptText = promptInput.value.trim();
+      if (!promptText) {
+        alert('Digite algo no prompt!');
+        return;
+      }
+
+      // reset ciclo
+      responseDiv.classList.remove('completed');
+      responseDiv.textContent = 'IA respondendo...';
+      responseDiv.classList.add('responding');
+
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: promptText })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Erro na requisição: ' + res.status);
+        }
+
+        const data = await res.json();
+        responseDiv.textContent = data.output;
+
+        // aplica borda verde permanente
+        responseDiv.classList.remove('responding');
+        responseDiv.classList.add('completed');
+
+      } catch (error) {
+        responseDiv.textContent = 'Erro: ' + error.message;
+        responseDiv.classList.remove('responding');
+      } finally {
+        sendBtn.disabled = false;
+      }
+    });
+    </script>
     </body>
     </html>
+
+
     """
 
 # Endpoint POST /ask
