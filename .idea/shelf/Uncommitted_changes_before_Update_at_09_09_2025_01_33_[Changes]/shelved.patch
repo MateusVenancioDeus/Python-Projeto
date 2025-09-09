@@ -1,0 +1,568 @@
+Index: .env
+===================================================================
+diff --git a/.env b/.env
+deleted file mode 100644
+--- a/.env	(revision 7ed527221fed0622687991302f811d69e6872ede)
++++ /dev/null	(revision 7ed527221fed0622687991302f811d69e6872ede)
+@@ -1,1 +0,0 @@
+-GOOGLE_API_KEY=AIzaSyBFfhwdoKzTDblKRPsr9BulhthH40ojog4
+Index: pyproject.toml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pyproject.toml b/pyproject.toml
+deleted file mode 100644
+--- a/pyproject.toml	(revision 7ed527221fed0622687991302f811d69e6872ede)
++++ /dev/null	(revision 7ed527221fed0622687991302f811d69e6872ede)
+@@ -1,21 +0,0 @@
+-[tool.poetry]
+-name = "pyproject-toml"
+-version = "2.1.4"
+-description = "."
+-authors = [
+-    {name = "Your Name", email = "you@example.com"}
+-]
+-license = {text = "."}
+-readme = "README.md"
+-requires-python = ">=3.13"
+-dependencies = []
+-
+-[tool.poetry.packages]
+-include = "pyproject"
+-
+-[tool.poetry.group.dev.dependencies]
+-poetry = "init"
+-
+-[build-system]
+-requires = ["poetry-core>=2.0.0,<3.0.0"]
+-build-backend = "poetry.core.masonry.api"
+Index: chat.py
+===================================================================
+diff --git a/chat.py b/chat.py
+deleted file mode 100644
+--- a/chat.py	(revision 7ed527221fed0622687991302f811d69e6872ede)
++++ /dev/null	(revision 7ed527221fed0622687991302f811d69e6872ede)
+@@ -1,11 +0,0 @@
+-from fastapi import APIRouter
+-import google.generativeai as genai
+-
+-router = APIRouter()
+-model = genai.GenerativeModel("gemini-1.5-flash")
+-chat = model.start_chat(history=[])
+-
+-@router.post("/chat")
+-async def chat_with_gemini(prompt: str):
+-    response = chat.send_message(prompt)
+-    return {"prompt": prompt, "response": response.text}
+Index: database.py
+===================================================================
+diff --git a/database.py b/database.py
+deleted file mode 100644
+--- a/database.py	(revision 7ed527221fed0622687991302f811d69e6872ede)
++++ /dev/null	(revision 7ed527221fed0622687991302f811d69e6872ede)
+@@ -1,11 +0,0 @@
+-from pymongo import MongoClient
+-
+-# Altere a URL conforme necessário
+-MONGO_URL = "mongodb://localhost:27017"
+-client = MongoClient(MONGO_URL)
+-
+-# Nome do banco de dados
+-db = client["meubanco"]
+-
+-# Exemplo de acesso à coleção (tabela)
+-usuarios_collection = db["usuarios"]
+Index: main.py
+===================================================================
+diff --git a/main.py b/main.py
+deleted file mode 100644
+--- a/main.py	(revision 7ed527221fed0622687991302f811d69e6872ede)
++++ /dev/null	(revision 7ed527221fed0622687991302f811d69e6872ede)
+@@ -1,181 +0,0 @@
+-import os
+-import google.generativeai as genai
+-from fastapi import FastAPI, HTTPException
+-from pydantic import BaseModel, Field
+-from dotenv import load_dotenv
+-from fastapi.responses import HTMLResponse
+-
+-# Carregar variáveis de ambiente do arquivo .env
+-load_dotenv()
+-
+-# Obter chave da API do ambiente
+-api_key: str | None = os.getenv("GOOGLE_API_KEY")
+-if not api_key:
+-    raise RuntimeError("Chave da API não encontrada. Configure no arquivo .env")
+-
+-# Configurar Google Gemini
+-genai.configure(api_key=api_key)
+-
+-# Inicializar FastAPI
+-app = FastAPI(
+-    title="API FastAPI + Google Gemini",
+-    description="Camada intermediária para interação com o modelo Gemini via Google AI SDK",
+-    version="1.0.0"
+-)
+-
+-
+-# Modelos de dados para request e response
+-class PromptRequest(BaseModel):
+-    """Modelo de entrada do usuário para o prompt enviado ao Gemini."""
+-    prompt: str = Field(..., example="Explique o que é FastAPI em uma frase.")
+-
+-
+-class GeminiResponse(BaseModel):
+-    """Modelo de resposta retornado pela API Gemini."""
+-    input: str
+-    output: str
+-    model: str
+-
+-
+-# Frontend simples
+-@app.get("/", response_class=HTMLResponse)
+-async def home() -> str:
+-    """
+-    Rota inicial que retorna a interface HTML simples de chat com Gemini.
+-    """
+-    return """
+-    <!DOCTYPE html>
+-    <html lang="pt-BR">
+-    <head>
+-        <meta charset="UTF-8" />
+-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+-        <h1>Bem vindo ao Seu chat gratuito!<h1>
+-        <title>Chat com IA do google</title>
+-        <style>
+-            body {
+-                font-family: Arial, sans-serif;
+-                background: #0D0D0D;
+-                margin: 0; padding: 0;
+-                display: flex; flex-direction: column; align-items: center;
+-                height: 100vh;
+-                justify-content: center;
+-            }
+-            h1 {
+-                color: #FFFFFF;
+-            }
+-            #chatbox {
+-                width: 90%;
+-                max-width: 600px;
+-                background: white;
+-                border-radius: 8px;
+-                padding: 20px;
+-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+-            }
+-            textarea {
+-                width: 100%;
+-                height: 100px;
+-                border-radius: 4px;
+-                border: 1px solid #ccc;
+-                padding: 10px;
+-                font-size: 16px;
+-                resize: vertical;
+-            }
+-            button {
+-                margin-top: 10px;
+-                padding: 10px 20px;
+-                font-size: 16px;
+-                background-color: #007bff;
+-                border: none;
+-                color: white;
+-                border-radius: 4px;
+-                cursor: pointer;
+-            }
+-            button:disabled {
+-                background-color: #9e9e9e;
+-                cursor: not-allowed;
+-            }
+-            #response {
+-                margin-top: 20px;
+-                white-space: pre-wrap;
+-                background: #e9ecef;
+-                padding: 15px;
+-                border-radius: 4px;
+-                min-height: 80px;
+-                font-size: 16px;
+-            }
+-        </style>
+-    </head>
+-    <body>
+-        <h1>Chat com Google Gemini</h1>
+-        <div id="chatbox">
+-            <textarea id="prompt" placeholder="Digite sua pergunta aqui..."></textarea>
+-            <button id="sendBtn">Enviar</button>
+-            <div id="response"></div>
+-        </div>
+-        <script>
+-            const sendBtn = document.getElementById('sendBtn');
+-            const promptInput = document.getElementById('prompt');
+-            const responseDiv = document.getElementById('response');
+-
+-            sendBtn.addEventListener('click', async () => {
+-                const promptText = promptInput.value.trim();
+-                if (!promptText) {
+-                    alert('Digite algo no prompt!');
+-                    return;
+-                }
+-                sendBtn.disabled = true;
+-                responseDiv.textContent = 'Carregando...';
+-
+-                try {
+-                    const res = await fetch('/ask', {
+-                        method: 'POST',
+-                        headers: {
+-                            'Content-Type': 'application/json'
+-                        },
+-                        body: JSON.stringify({ prompt: promptText })
+-                    });
+-                    if (!res.ok) {
+-                        const err = await res.json();
+-                        throw new Error(err.detail || 'Erro na requisição: ' + res.status);
+-                    }
+-                    const data = await res.json();
+-                    responseDiv.textContent = data.output;
+-                } catch (error) {
+-                    responseDiv.textContent = 'Erro: ' + error.message;
+-                } finally {
+-                    sendBtn.disabled = false;
+-                }
+-            });
+-        </script>
+-    </body>
+-    </html>
+-    """
+-
+-# Endpoint POST /ask
+-@app.post("/ask", response_model=GeminiResponse)
+-async def ask_gemini(request: PromptRequest) -> GeminiResponse:
+-    """
+-    Endpoint que envia o prompt do usuário para o modelo Gemini e retorna a resposta.
+-
+-    - **prompt**: texto enviado pelo usuário (entrada).
+-    - **response**: texto gerado pelo modelo Gemini (saída).
+-    """
+-    try:
+-        model_name: str = "gemini-1.5-flash"
+-        model = genai.GenerativeModel(model_name)
+-
+-        response = model.generate_content(request.prompt)
+-
+-        # Extrair texto da resposta
+-        output_text: str = response.text if response.text else "[Sem resposta do modelo]"
+-
+-        return GeminiResponse(
+-            input=request.prompt,
+-            output=output_text,
+-            model=model_name
+-        )
+-
+-    except Exception as e:
+-        import traceback
+-        traceback.print_exc()
+-        raise HTTPException(status_code=500, detail=f"Erro ao consultar Gemini: {str(e)}")
+Index: main/main.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main/main.py b/main/main.py
+new file mode 100644
+--- /dev/null	(date 1757390461247)
++++ b/main/main.py	(date 1757390461247)
+@@ -0,0 +1,33 @@
++from fastapi import FastAPI
++from fastapi.responses import HTMLResponse
++from pathlib import Path
++from pydantic import BaseModel
++
++# Importa a função geradora de resposta da Gemini
++from services.gemini_client import generate_gemini_response
++
++app = FastAPI(
++    title="API FastAPI + Google ADK",
++    description="Chat com Google ADK (Gemini) usando frontend estilizado",
++    version="1.0.0"
++)
++
++@app.get("/", response_class=HTMLResponse)
++async def home():
++    # Caminho do arquivo index.html no frontend
++    project_root = Path(__file__).resolve().parent.parent
++    html_path = project_root / "frontend" / "index.html"
++    if not html_path.exists():
++        return HTMLResponse("<h1>Arquivo index.html não encontrado.</h1>", status_code=404)
++    return html_path.read_text(encoding="utf-8")
++
++class PromptInput(BaseModel):
++    prompt: str
++
++@app.post("/ask")
++async def ask(input: PromptInput):
++    try:
++        response = generate_gemini_response(input.prompt)
++        return {"output": response}
++    except Exception as e:
++        return {"output": f"Erro ao gerar resposta: {str(e)}"}
+Index: main/app/pyproject.toml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main/app/pyproject.toml b/main/app/pyproject.toml
+new file mode 100644
+--- /dev/null	(date 1757257326150)
++++ b/main/app/pyproject.toml	(date 1757257326150)
+@@ -0,0 +1,37 @@
++[project]
++name = "fastapi-gemini-api"
++version = "0.1.0"
++description = "API FastAPI integrada ao Google Gemini via Google AI SDK"
++readme = "README.md"
++requires-python = ">=3.10,<3.14"
++
++# authors como ARRAY DE OBJETOS (esta forma evita o erro que você recebeu)
++authors = [
++  { name = "Mateus Venancio Deus", email = "162513571+MateusVenancioDeus@users.noreply.github.com" }
++]
++
++# dependências principais (formato aceito pelo PEP-621 / Poetry moderno)
++dependencies = [
++  "fastapi>=0.115.0,<0.116.0",
++  "uvicorn>=0.30.0,<0.31.0",
++  "google-generativeai>=0.8.3,<0.9.0",
++  "python-dotenv>=1.0.1,<2.0.0",
++  "pydantic>=2.9.2,<3.0.0",
++]
++
++[project.optional-dependencies]
++# dependências opcionais agrupadas (ex.: banco de dados)
++db = [
++  "psycopg2-binary>=2.9.9,<3.0.0",   # PostgreSQL
++  "motor>=3.6.0,<4.0.0",             # MongoDB
++]
++
++# grupo "dev" (ferramentas de desenvolvimento/testes)
++dev = [
++  "pytest>=8.3.3,<9.0.0",
++  "httpx>=0.27.2,<1.0.0",
++]
++
++[build-system]
++requires = ["poetry-core>=1.0.0"]
++build-backend = "poetry.core.masonry.api"
+Index: main/app/models.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main/app/models.py b/main/app/models.py
+new file mode 100644
+--- /dev/null	(date 1757387760384)
++++ b/main/app/models.py	(date 1757387760384)
+@@ -0,0 +1,9 @@
++from pydantic import BaseModel, Field
++
++class PromptRequest(BaseModel):
++    prompt: str = Field(..., example="Explique o que é FastAPI em uma frase.")
++
++class GeminiResponse(BaseModel):
++    input: str
++    output: str
++    model: str
+Index: main/app/config.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main/app/config.py b/main/app/config.py
+new file mode 100644
+--- /dev/null	(date 1757390043772)
++++ b/main/app/config.py	(date 1757390043772)
+@@ -0,0 +1,9 @@
++import os
++from dotenv import load_dotenv
++
++# Carregar variáveis do .env
++load_dotenv()
++
++API_KEY = os.getenv("AIzaSyDk5e_nZGIOvcIuLus5Wtzs94pNLzp2SjE")
++if not API_KEY:
++    raise RuntimeError("Chave da API não encontrada. Configure no arquivo .env")
+Index: routes/chat.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/routes/chat.py b/routes/chat.py
+new file mode 100644
+--- /dev/null	(date 1757388778703)
++++ b/routes/chat.py	(date 1757388778703)
+@@ -0,0 +1,7 @@
++from fastapi import FastAPI
++
++app = FastAPI()
++
++@app.get("/")
++def hello():
++    return {"msg": "Olá, mundo!"}
+Index: frontend/index.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/index.html b/frontend/index.html
+new file mode 100644
+--- /dev/null	(date 1757391613045)
++++ b/frontend/index.html	(date 1757391613045)
+@@ -0,0 +1,89 @@
++<!DOCTYPE html>
++<html lang="pt-BR">
++<head>
++<meta charset="UTF-8" />
++<meta name="viewport" content="width=device-width, initial-scale=1" />
++<title>Chat IA</title>
++<style>
++    body {
++        font-family: Arial, sans-serif;
++        background: #121212;
++        margin: 0; padding: 0;
++        display: flex; flex-direction: column; align-items: center;
++        height: 100vh; justify-content: center;
++    }
++    h1 { color: #FFFFFF; text-align: center; }
++    #chatbox {
++        width: 90%; max-width: 600px;
++        background: #121212; border-radius: 8px; padding: 20px;
++        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
++        display: flex; flex-direction: column; align-items: center; gap: 10px;
++    }
++    textarea, #response {
++        width: 100%; height: 150px; border-radius: 6px; border: 3px solid #ccc;
++        padding: 10px; font-size: 16px; resize: none; box-sizing: border-box;
++    }
++    textarea { background: #fff; color: #000; }
++    #response {
++        background: #e9ecef; color: #000; overflow-y: auto; margin-top: 20px;
++        border: 3px solid transparent; transition: border 0.3s ease-in-out;
++    }
++    #response.responding { border: 3px solid yellow; }
++    #response.completed { border: 3px solid limegreen; }
++    button {
++        padding: 10px 20px; font-size: 16px;
++        background-color: #007bff; border: none; color: white;
++        border-radius: 4px; cursor: pointer;
++    }
++    button:disabled { background-color: #9e9e9e; cursor: not-allowed; }
++</style>
++</head>
++<body>
++    <h1>Chat com Google ADK</h1>
++    <div id="chatbox">
++        <textarea id="prompt" placeholder="Digite sua pergunta aqui..."></textarea>
++        <button id="sendBtn">Enviar</button>
++        <div id="response"></div>
++    </div>
++    <script>
++        const sendBtn = document.getElementById('sendBtn');
++        const promptInput = document.getElementById('prompt');
++        const responseDiv = document.getElementById('response');
++
++        sendBtn.addEventListener('click', async () => {
++            const promptText = promptInput.value.trim();
++            if (!promptText) { alert('Digite algo no prompt!'); return; }
++
++            responseDiv.classList.remove('completed');
++            responseDiv.textContent = 'IA respondendo...';
++            responseDiv.classList.add('responding');
++
++            sendBtn.disabled = true;
++
++            try {
++                const res = await fetch('/ask', {
++                    method: 'POST',
++                    headers: { 'Content-Type': 'application/json' },
++                    body: JSON.stringify({ prompt: promptText })
++                });
++
++                if (!res.ok) {
++                    const err = await res.json();
++                    throw new Error(err.detail || 'Erro na requisição: ' + res.status);
++                }
++
++                const data = await res.json();
++                responseDiv.textContent = data.output;
++                responseDiv.classList.remove('responding');
++                responseDiv.classList.add('completed');
++
++            } catch (error) {
++                responseDiv.textContent = 'Erro: ' + error.message;
++                responseDiv.classList.remove('responding');
++            } finally {
++                sendBtn.disabled = false;
++            }
++        });
++    </script>
++</body>
++</html>
+Index: services/gemini_client.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/services/gemini_client.py b/services/gemini_client.py
+new file mode 100644
+--- /dev/null	(date 1757391057187)
++++ b/services/gemini_client.py	(date 1757391057187)
+@@ -0,0 +1,24 @@
++import os
++from dotenv import load_dotenv
++from pathlib import Path
++import google.generativeai as genai  # não esqueça de importar
++
++# Caminho correto do .env (mesmo diretório do gemini_client.py → main/app/.env)
++env_path = Path(__file__).parent / ".env"
++load_dotenv(dotenv_path=env_path)
++
++# Pega a chave da API
++API_KEY = os.getenv("GOOGLE_API_KEY")
++print("API_KEY encontrada:", API_KEY)  # DEBUG
++
++if not API_KEY:
++    raise ValueError("Variável GOOGLE_API_KEY não encontrada no ambiente")
++
++# Configura o cliente Gemini
++genai.configure(api_key=API_KEY)
++
++def generate_gemini_response(prompt: str) -> str:
++    """Gera resposta usando o modelo Gemini"""
++    model = genai.GenerativeModel("gemini-1.5-flash")
++    response = model.generate_content(prompt)
++    return response.text
+Index: requirements.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+--- /dev/null	(date 1757387859182)
++++ b/requirements.txt	(date 1757387859182)
+@@ -0,0 +1,4 @@
++fastapi
++uvicorn
++python-dotenv
++google-genai
+Index: services/.env
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/services/.env b/services/.env
+new file mode 100644
+--- /dev/null	(date 1757389901242)
++++ b/services/.env	(date 1757389901242)
+@@ -0,0 +1,1 @@
++GOOGLE_API_KEY=AIzaSyDk5e_nZGIOvcIuLus5Wtzs94pNLzp2SjE
+diff --git a/__init__.py b/__init__.py
+new file mode 100644
