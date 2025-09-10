@@ -46,6 +46,8 @@ pip install -r requirements.txt
 
 ▶️ Executando a aplicação
 
+Server.py onde vamos dar o Run.
+
 Com Poetry:
 poetry run uvicorn server:app --reload
 
