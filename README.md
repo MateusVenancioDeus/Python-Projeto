@@ -47,7 +47,6 @@ pip install -r requirements.txt
 ▶️ Executando a aplicação
 
 Com Poetry:
-
 poetry run uvicorn server:app --reload
 
 Teste para retornar com pytest: 
