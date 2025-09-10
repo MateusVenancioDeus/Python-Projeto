@@ -4,7 +4,7 @@
 
 ![img_1.png](img_1.png)
 
-**⚙️ Tecnologias utilizadas** \
+**⚙️ Tecnologias utilizadas** 
 - FastAPI
  → Framework web moderno e rápido para criação de APIs em Python.
 
