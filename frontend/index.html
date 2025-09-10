@@ -61,11 +61,12 @@
             sendBtn.disabled = true;
 
             try {
-                const res = await fetch('/ask', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: promptText })
+                const res = await fetch('/chat/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: promptText })
                 });
+
 
                 if (!res.ok) {
                     const err = await res.json();
@@ -85,5 +86,6 @@
             }
         });
     </script>
+<script></script>
 </body>
 </html>
